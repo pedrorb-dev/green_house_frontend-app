@@ -1,41 +1,26 @@
-This is an Expo/React Native mobile application. Prioritize mobile-first patterns, performance, and cross-platform compatibility.
+# Greenhouse Frontend — Expo SDK 58
 
-## Expo has changed — do not trust your training data
+## Reality check
+- Code is still the Expo Router starter: `src/app/{_layout,index,explore}.tsx`, `src/components/*`, `src/constants/theme.ts`. There is no `domain/`, `services/`, DTOs, TanStack Query, NativeWind, or test code yet.
+- `README.md` describes/claims the Phase-1 greenhouse simulator (`GreenhouseRepository`, mock engine, PWM/cooldown rules) and a target `src/` tree. Treat it as design intent; trust the actual files. Its "SDK 52+" line is stale — `package.json` says SDK 58.
 
-Expo ships breaking changes every SDK release. APIs you remember are likely renamed, moved, or removed. Before writing any code that touches an Expo, EAS, or React Native API:
+## Docs & versions
+- `expo ~58.0.26`, `react-native 0.88.1`, React 19.3.0. `package-lock.json` only — use `npx`/`npm`, not `bunx`.
+- Before using any Expo/EAS/RN API, check https://docs.expo.dev/versions/v58.0.0/ and https://docs.expo.dev/llms.txt. Pre-SDK-58 API knowledge is unreliable here.
 
-1. Read the major version of the `expo` package in `package.json`.
-2. Fetch the matching versioned docs: `https://docs.expo.dev/versions/v<major>.0.0/`
-3. For anything else, fetch https://docs.expo.dev/llms.txt — an index of all Expo docs with corrections to common LLM misconceptions. Follow its links to the specific page you need; never answer from memory.
+## Verification commands
+- `npm start` / `npm run android|ios|web` — dev server; `npx tsc --noEmit` — typecheck.
+- `npx tsc --noEmit` currently exits 1 with 3 known template errors: CSS-module types in `components/animated-icon.web.tsx`, a `ref` type in `components/app-tabs.web.tsx`, and the side-effect import of `@/global.css` in `constants/theme.ts`. Don't assume you caused them.
+- `npm run lint` (`expo lint`) is not a working gate: no ESLint config/deps are committed, and the first run auto-installs ESLint, then fails with `requires ESLint version 8.57.0 or greater`. Use `npx eslint .` only after explicitly setting ESLint up.
+- No test script/framework, CI workflows, or `eas.json` exist.
 
-## Commands
+## App wiring
+- Routes: `src/app/` (entry `expo-router/entry`); `@/*` → `./src/*`, `@/assets/*` → `./assets/*`.
+- Platform twins exist: `animated-icon.web.tsx`, `app-tabs.web.tsx`, `use-color-scheme.web.ts`. Change native and `.web` versions together.
+- `_layout.tsx` calls `SplashScreen.preventAutoHideAsync()` at import time; `AnimatedSplashOverlay` in `components/animated-icon.tsx` is what hides it. Removing that overlay leaves the app stuck on splash.
+- Tabs use `NativeTabs` from `expo-router/native-tabs`, not the older `Tabs` API.
+- `app.json` enables `typedRoutes` + `reactCompiler`; `.expo/types/**` and `expo-env.d.ts` are generated/gitignored — don't hand-edit. Web uses `output: "server"`, not static export.
+- No `ios/`/`android/` dirs (Continuous Native Generation): configure native behavior only in `app.json`/config plugins. Native-only modules need a development build; Expo Go is not enough.
 
-Use `bunx` instead of `npx` if the project uses bun (`bun.lock` present).
-
-```bash
-npx expo install <package>  # ALWAYS use instead of npm/yarn/pnpm/bun add — resolves SDK-compatible versions
-npx expo start              # start the dev server
-npx expo lint               # lint
-npx tsc --noEmit            # typecheck
-npx expo-doctor             # diagnose dependency and config issues
-npx expo install --fix      # fix incompatible package versions
-```
-
-Run lint and typecheck before declaring any task done.
-
-## Navigation & Routing
-
-- Use **Expo Router** for all navigation. Routes live in `src/app/` — every file there is a screen, `_layout.tsx` files define navigators. Keep non-route code (components, hooks, utils) outside `src/app/`.
-- Import `Link`, `router`, and `useLocalSearchParams` from `expo-router`.
-- Docs: https://docs.expo.dev/router/introduction.md
-
-## Building with EAS
-
-Use EAS to build, sign, and submit the app in the cloud (`eas build`, `eas submit`) and to ship over-the-air updates (`eas update`) — no local Xcode or Android Studio required. Run EAS CLI as `bunx eas-cli <command>` in Bun projects, or `npx eas-cli@latest <command>` otherwise; substitute that for bare `eas` in docs examples.
-Docs: https://docs.expo.dev/eas/index.md
-
-## Rules
-
-- If `ios/` and `android/` directories do not exist, they are generated (Continuous Native Generation). Never create or edit them by hand — configure native behavior in `app.json` and config plugins.
-- Expo Go only includes its bundled native modules. After adding a library with native code, the app needs a development build: `npx expo run:ios|android` locally, or `eas build --profile development`.
-- Prefer recommended Expo modules over third-party libraries, and check your available skills before adding dependencies. Docs: https://docs.expo.dev/versions/latest/index.md
+## Local workflow
+- `.agents/skills/{spec,spec-impl}` (pinned in `skills-lock.json`) define spec-driven work: specs go in `specs/NN-slug.md`; `/spec-impl` requires an "Approved" spec, creates `spec-NN-slug` by default, and pauses after each step. `.agents/*` is gitignored.
