@@ -1,7 +1,7 @@
 # Greenhouse Frontend — Expo SDK 58
 
 ## Reality check
-- Code is still the Expo Router starter: `src/app/{_layout,index,explore}.tsx`, `src/components/*`, `src/constants/theme.ts`. There is no `domain/`, `services/`, DTOs, TanStack Query, NativeWind, or test code yet.
+- SPEC 01 base structure is in place: `src/domain/{models,repositories}`, empty `src/services/` + `src/components/{sensors,actuators}` + `src/hooks/` folders, and `src/app/(tabs)/` with three placeholder screens. No mock engine, API client, real data screens, TanStack Query, NativeWind, or test code yet.
 - `README.md` describes/claims the Phase-1 greenhouse simulator (`GreenhouseRepository`, mock engine, PWM/cooldown rules) and a target `src/` tree. Treat it as design intent; trust the actual files. Its "SDK 52+" line is stale — `package.json` says SDK 58.
 
 ## Docs & versions
@@ -10,15 +10,15 @@
 
 ## Verification commands
 - `npm start` / `npm run android|ios|web` — dev server; `npx tsc --noEmit` — typecheck.
-- `npx tsc --noEmit` currently exits 1 with 3 known template errors: CSS-module types in `components/animated-icon.web.tsx`, a `ref` type in `components/app-tabs.web.tsx`, and the side-effect import of `@/global.css` in `constants/theme.ts`. Don't assume you caused them.
+- `npx tsc --noEmit` currently exits 0. `src/global.d.ts` declares `*.css` / `*.module.css` so the `@/global.css` side-effect import in `constants/theme.ts` typechecks.
 - `npm run lint` (`expo lint`) is not a working gate: no ESLint config/deps are committed, and the first run auto-installs ESLint, then fails with `requires ESLint version 8.57.0 or greater`. Use `npx eslint .` only after explicitly setting ESLint up.
 - No test script/framework, CI workflows, or `eas.json` exist.
 
 ## App wiring
 - Routes: `src/app/` (entry `expo-router/entry`); `@/*` → `./src/*`, `@/assets/*` → `./assets/*`.
-- Platform twins exist: `animated-icon.web.tsx`, `app-tabs.web.tsx`, `use-color-scheme.web.ts`. Change native and `.web` versions together.
-- `_layout.tsx` calls `SplashScreen.preventAutoHideAsync()` at import time; `AnimatedSplashOverlay` in `components/animated-icon.tsx` is what hides it. Removing that overlay leaves the app stuck on splash.
-- Tabs use `NativeTabs` from `expo-router/native-tabs`, not the older `Tabs` API.
+- Only `src/components/ui/splash-overlay.web.tsx` remains as a platform twin (returns `null` on web); the starter twins (`animated-icon`, `app-tabs`, `use-color-scheme`) were removed with SPEC 01.
+- `_layout.tsx` calls `SplashScreen.preventAutoHideAsync()` at import time; `AnimatedSplashOverlay` in `src/components/ui/splash-overlay.tsx` is what hides it. Removing that overlay leaves the app stuck on splash.
+- Tabs use the JavaScript `Tabs` API from `expo-router` (no `NativeTabs`, no `_layout.web.tsx`) with Ionicons `home` / `options` / `settings` from `@expo/vector-icons`, a direct dependency. Brand colors: indigo `#4F46E5` + lavanda `#EEF2FF` in `src/constants/theme.ts`.
 - `app.json` enables `typedRoutes` + `reactCompiler`; `.expo/types/**` and `expo-env.d.ts` are generated/gitignored — don't hand-edit. Web uses `output: "server"`, not static export.
 - No `ios/`/`android/` dirs (Continuous Native Generation): configure native behavior only in `app.json`/config plugins. Native-only modules need a development build; Expo Go is not enough.
 

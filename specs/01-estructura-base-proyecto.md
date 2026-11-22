@@ -1,8 +1,8 @@
 # SPEC 01 — Estructura base del proyecto
 
-> **Estado:** Aprobado
+> **Estado:** Implementado
 > **Fecha:** 2026-11-21
-> **Objetivo:** Establecer la estructura base del proyecto — dominio, servicios, componentes y rutas `(tabs)` — con los contratos `TelemetryDTO`, `CommandDTO`, constantes y `GreenhouseRepository` definidos, y dejar la app compilando sin errores de tipos con tres pantallas placeholder.
+> **Objetivo:** Establecer la estructura base del proyecto — dominio, servicios, componentes y rutas `(tabs)` — con los contratos `TelemetryDTO`, `CommandDTO`, constantes y `GreenhouseRepository` definidos, una barra de tabs JS con iconos Ionicons y paleta indigo/lavanda, y dejar la app compilando sin errores de tipos con tres pantallas placeholder visibles en web y en Expo Go 58 (Android).
 
 ## Alcance
 
@@ -11,10 +11,13 @@
 - Crear el árbol de carpetas objetivo (`domain`, `services`, `components`, `hooks`) con sus subcarpetas.
 - Definir los contratos de dominio derivados del `README.md`: `TelemetryDTO`, `CommandDTO`, constantes y la interfaz `GreenhouseRepository`.
 - Reemplazar las rutas del starter (`index`/`explore`) por el grupo `(tabs)` con 3 pantallas placeholder: `index` (Dashboard), `controls`, `settings`.
-- Barra de tabs dual: `NativeTabs` (nativo) + twin web (`expo-router/ui`).
+- Barra de tabs única con `Tabs` de `expo-router` (JavaScript, sin twin web), con iconos Ionicons `home` / `options` / `settings` (outline → filled según pestaña activa).
+- Instalar `@expo/vector-icons` como dependencia directa (`npx expo install @expo/vector-icons`).
+- Aplicar la paleta indigo `#4F46E5` + lavanda `#EEF2FF` en tema, splash overlay, `app.json` y pantallas placeholder.
 - Extraer `AnimatedSplashOverlay` a `components/ui/` y eliminar el logo demo `AnimatedIcon`.
 - Eliminar los componentes, hooks y assets de demo del starter que queden huérfanos.
 - Dejar `npx tsc --noEmit` en 0 errores (hoy falla con 3 errores de plantilla).
+- Verificar que la app se ve en Expo Go 58 (Android), además de web.
 
 **Fuera de alcance (para specs futuras):**
 
@@ -23,7 +26,7 @@
 - Pantallas con datos reales: tarjetas de sensores, sliders PWM, botón de riego, selector de compuerta.
 - TanStack Query y `hooks/useGreenhouse.ts`.
 - NativeWind / sistema de estilos definitivo.
-- Iconos de tabs y tema visual de la app.
+- Barra nativa (`NativeTabs`) ni twin web (`_layout.web.tsx`): descartados en esta enmienda por compatibilidad con Expo Go.
 
 ## Modelo de datos
 
@@ -113,28 +116,35 @@ Cada paso deja la app funcional y arrancable.
 
 2. **Extraer splash overlay.** Crear `components/ui/splash-overlay.tsx` (copia de `AnimatedSplashOverlay`) y `splash-overlay.web.tsx` (retorna `null`). Actualizar `src/app/_layout.tsx` para importarlo desde ahí. Eliminar `animated-icon.tsx`, `animated-icon.web.tsx`, `animated-icon.module.css` y el asset `logo-glow.png`. Verificar: el splash se anima y desaparece en web y nativo.
 
-3. **Mover rutas a `(tabs)`.** Crear `src/app/(tabs)/_layout.tsx` (`NativeTabs` con triggers `index` → label "Dashboard", `controls` → label "Controls", `settings` → label "Settings", solo label) y `_layout.web.tsx` (twin con `expo-router/ui`, mismo mapeo de labels). Crear `index.tsx`, `controls.tsx`, `settings.tsx` (título + "En construcción"). Eliminar `src/app/index.tsx`, `src/app/explore.tsx`, `components/app-tabs.tsx` y `app-tabs.web.tsx`. Actualizar `src/app/_layout.tsx` para renderizar `<Slot />` (ThemeProvider + splash overlay + Slot). Verificar: 3 pestañas navegables en web.
+3. **Mover rutas a `(tabs)` con barra JS.** Instalar `@expo/vector-icons` (`npx expo install @expo/vector-icons`). Crear `src/app/(tabs)/_layout.tsx` con `Tabs` de `expo-router` (no `NativeTabs`): `index` → "Dashboard" + `home`/`home-outline`, `controls` → "Controls" + `options`/`options-outline`, `settings` → "Settings" + `settings`/`settings-outline`; color activo indigo e inactivo apagado, `tabBarStyle` lavanda y header acorde. **No crear** `_layout.web.tsx`. Crear `index.tsx`, `controls.tsx`, `settings.tsx` (título + "En construcción"). Eliminar `src/app/index.tsx`, `src/app/explore.tsx`, `components/app-tabs.tsx` y `app-tabs.web.tsx`. Actualizar `src/app/_layout.tsx` para renderizar `<Slot />` (ThemeProvider + splash overlay + Slot). Verificar: 3 pestañas navegables con iconos en web.
 
 4. **Limpiar demo.** Eliminar `components/themed-text.tsx`, `themed-view.tsx`, `hint-row.tsx`, `external-link.tsx`, `web-badge.tsx`, `components/ui/collapsible.tsx`, `hooks/use-theme.ts`, `hooks/use-color-scheme.ts` y `.web.ts`, y los assets demo (`react-logo*`, `expo-badge*`, `tutorial-web.png`, `tabIcons/*`). Conservar los assets referenciados por `app.json` (`icon.png`, `splash-icon.png`, `favicon.png`, `android-icon-*`) y `expo-logo.png` (usado por el splash). Verificar: la app arranca sin referencias rotas.
 
 5. **Cerrar typecheck.** Crear `src/global.d.ts` con `declare module '*.css';` y `declare module '*.module.css';` (mantiene `import '@/global.css'` de `theme.ts` sin tocarlo). Verificar: `npx tsc --noEmit` termina con 0 errores.
 
+6. **Aplicar tema visual.** Extender `Colors` en `src/constants/theme.ts` con `primary` (`#4F46E5`), `onPrimary` (`#FFFFFF`) y fondos (`#EEF2FF` en light; indigo oscuro en dark). Pintar el fondo de `src/components/ui/splash-overlay.tsx` de indigo; actualizar `app.json` (`expo-splash-screen.backgroundColor` → `#4F46E5`, `android.adaptiveIcon.backgroundColor` → `#EEF2FF`) y las 3 pantallas placeholder (fondo lavanda, título indigo, texto secundario). Actualizar `AGENTS.md` para reflejar que la barra es JS y que `@expo/vector-icons` es dependencia directa. Verificar: `npx tsc --noEmit` sigue en 0 errores y web muestra la paleta.
+
+7. **Verificar web y Expo Go.** `npm run web` → rutas `/`, `/controls`, `/settings` con iconos y sin errores. `npx expo start -c --android` (caché limpia) → abrir QR con Expo Go 58 en Android: splash indigo, 3 pestañas con iconos sobre lavanda, sin pantalla en blanco. Si aparece pantalla en blanco, revisar logs de Metro antes de dar por cerrada la spec.
+
 ## Criterios de aceptación
 
-- [ ] `npx tsc --noEmit` termina con 0 errores.
-- [ ] `npm run web` arranca y muestra 3 pestañas (Dashboard, Controls, Settings).
-- [ ] Navegar entre las 3 pestañas funciona en web y la app no se cuelga en el splash.
-- [ ] En nativo (`npm start`) el splash se anima y desaparece, y luego se ven las 3 pestañas.
-- [ ] Existen `src/domain/models/greenhouse.types.ts` y `src/domain/repositories/greenhouse.repo.ts` con los tipos y constantes definidos.
-- [ ] Existen las carpetas `services/mock`, `services/api`, `components/sensors`, `components/actuators` y `hooks` (con `.gitkeep`).
-- [ ] No quedan imports/referencias a los archivos demo eliminados (`themed-text`, `app-tabs`, `animated-icon`, `explore`, `use-theme`, etc.).
+- [x] `npx tsc --noEmit` termina con 0 errores.
+- [x] `npm run web` arranca y muestra 3 pestañas (Dashboard, Controls, Settings) con iconos Ionicons (HTTP 200 en `/`, `/controls`, `/settings`).
+- [x] Navegar entre las 3 pestañas funciona en web y la app no se cuelga en el splash.
+- [x] En Expo Go 58 (Android) el splash indigo se anima y desaparece, y luego se ven las 3 pestañas con iconos sobre fondo lavanda (sin pantalla en blanco). Verificado con `npx expo start -c --android` en emulador Pixel_6a: bundle Android correcto y jerarquía de UI con las 3 pestañas; navegación a Controls y Settings comprobada.
+- [x] La barra usa `Tabs` de `expo-router`; no quedan imports de `NativeTabs` ni `_layout.web.tsx`.
+- [x] `@expo/vector-icons` está declarado en `package.json` y `package-lock.json` (`^15.0.2`).
+- [x] Existen `src/domain/models/greenhouse.types.ts` y `src/domain/repositories/greenhouse.repo.ts` con los tipos y constantes definidos.
+- [x] Existen las carpetas `services/mock`, `services/api`, `components/sensors`, `components/actuators` y `hooks` (con `.gitkeep`).
+- [x] No quedan imports/referencias a los archivos demo eliminados (`themed-text`, `app-tabs`, `animated-icon`, `explore`, `use-theme`, etc.).
 
 ## Decisiones tomadas y descartadas
 
-- **Sí:** grupo `(tabs)` con 3 pantallas placeholder y barra dual NativeTabs + twin web. Coincide con el `README` y mantiene web funcional.
+- **Sí:** grupo `(tabs)` con 3 pantallas placeholder y una barra JS `Tabs` de `expo-router`. Expo Go 58 en Android mostró pantalla en blanco con `NativeTabs`; JS Tabs es 100% JS, funciona igual en nativo y web y permite poner Ionicons con `tabBarIcon`. Se descarta `NativeTabs` y el twin `_layout.web.tsx`.
 - **Sí:** contratos de dominio derivados del `README`, sin implementación. Son la base que consumirán las specs de sensores/actuadores/simulador.
 - **Sí:** extraer `AnimatedSplashOverlay` a `components/ui/` y eliminar el logo demo. El overlay es imprescindible para desbloquear el splash; el logo es demo.
-- **Sí:** tabs solo con label (sin iconos). Los iconos reales requieren assets y decisiones de diseño → diferido.
+- **Sí:** tabs con label + iconos Ionicons (`home` / `options` / `settings`, outline al no seleccionar y filled al seleccionar). `@expo/vector-icons` pasa a ser dependencia directa.
+- **Sí:** paleta indigo `#4F46E5` + lavanda `#EEF2FF` en tema, splash, `app.json` y placeholders; sustituye al azul del starter.
 - **Sí:** `src/global.d.ts` declarando `*.css` para resolver el error de tipo. Mantiene `global.css` (variables de fuente web) sin tocar `theme.ts`.
 - **No:** motor de simulación, TanStack Query, NativeWind, pantallas con datos, pruebas. Van en specs posteriores.
 - **No:** DTOs de un backend real. No hay contrato Spring Boot en el repo; se deriva del `README` y se ajustará al integrar.
@@ -144,16 +154,16 @@ Cada paso deja la app funcional y arrancable.
 | Riesgo                                                                          | Mitigación                                                                                 |
 | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
 | Borrar `animated-icon.tsx` sin extraer el overlay deja la app colgada en splash | El paso 2 extrae `AnimatedSplashOverlay` antes de borrar nada                              |
-| NativeTabs sin twin web pierde la barra en web                                  | Twin `_layout.web.tsx` con `expo-router/ui` en el paso 3                                   |
+| Pantalla en blanco en Expo Go 58 con NativeTabs                                 | Barra JS `Tabs` de `expo-router` en el paso 3 + verificación con caché limpia en el paso 7 |
 | Borrar assets referenciados por `app.json` rompe el build                       | Lista explícita de assets a conservar en el paso 4                                         |
-| Reintroducir el error de tipo `ref` al reescribir la barra web                  | El twin web se escribe sin el patrón `asChild`/spread de `app-tabs.web.tsx` que lo causaba |
+| Tipos de `tabBarIcon` / Ionicons al tipar la barra JS                           | Usar los tipos de `expo-router` y los nombres exportados por `@expo/vector-icons/Ionicons`; validar con `npx tsc --noEmit` |
 
 ## Qué **no** está en esta spec
 
 - Motor de simulación mock ni servicio API real.
 - Pantallas con datos (sensores, sliders, bomba, compuerta).
 - `hooks/useGreenhouse.ts` y TanStack Query.
-- Iconos de tabs y tema visual definitivo.
+- Barra nativa (`NativeTabs`) ni twin `_layout.web.tsx` (descartados por compatibilidad con Expo Go).
 - Pruebas, CI o `eas.json`.
 
 Cada uno de esos, si llega, va en su propia spec.
