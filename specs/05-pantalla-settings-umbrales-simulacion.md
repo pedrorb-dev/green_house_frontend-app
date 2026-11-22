@@ -1,6 +1,6 @@
 # SPEC 05 — Pantalla Settings, configuración de umbrales y panel de simulación
 
-> **Estado:** Aprobado
+> **Estado:** Implementado
 > **Fecha:** 2026-11-21
 > **Objetivo:** Implementar la pantalla `Settings` (`src/app/(tabs)/settings.tsx`) que consume `useTelemetry()` para leer los umbrales vigentes y el estado del simulador, con tres componentes modulares en `src/components/settings/` (`ThresholdsCard`, `SimulationDebugCard`, `FirmwareRulesCard`), formulario con borrador local que resiste el polling de 2 s, atajos de depuración del `mockEngine` con invalidación inmediata de la telemetría y una referencia de solo lectura de las reglas del firmware, sin tocar los contratos de dominio ni añadir dependencias, dejando `npx tsc --noEmit` en 0 errores y verificando en web y en Expo Go 58 (Android).
 
@@ -132,7 +132,7 @@ Cada paso deja la app funcional y arrancable.
 
 1. **`ThresholdsCard`.** Crear `src/components/settings/ThresholdsCard.tsx` con carcasa `SensorCard`, dos `TextInput` numéricos, borradores `string | null`, validación de enteros (objetivo 10–95, histéresis 1–`target - 1`), mensajes inline, vista previa `"La bomba se encenderá debajo de X%"`, botón "Guardar umbrales" (`SET_THRESHOLDS`, deshabilitado si inválido/sin cambios/`isPending`), botón "Restaurar cultivo base (65% / 10%)" con `SOIL.DEFAULT_*`, y limpieza de borradores en `onSuccess`. Verificar: `npx tsc --noEmit` en 0 errores.
 
-2. **`SimulationDebugCard`.** Crear `src/components/settings/SimulationDebugCard.tsx` con el panel etiquetado como pruebas del simulador local, los 5 botones/interruptor que llaman a `mockEngine.setProximityNear`, `setProximityFar`, `forceSoilDry`, `togglePhotoperiod` y `setSensorFault(!dhtOk)`, la telemetría actual mostrada y `queryClient.invalidateQueries({ queryKey: ["telemetry"] })` tras cada acción. Verificar: `npx tsc --noEmit` en 0 errores.
+2. **`SimulationDebugCard`.** Crear `src/components/settings/SimulationDebugCard.tsx` con el panel etiquetado como pruebas del simulador local, los 5 botones/interruptor que llaman a `mockEngine.setProximityNear`, `setProximityFar`, `forceSoilDry`, `togglePhotoperiod` y `setSensorFault(dhtOk)`, la telemetría actual mostrada y `queryClient.invalidateQueries({ queryKey: ["telemetry"] })` tras cada acción. Verificar: `npx tsc --noEmit` en 0 errores.
 
 3. **`FirmwareRulesCard`.** Crear `src/components/settings/FirmwareRulesCard.tsx` sin props, leyendo `PHOTOPERIOD`, `PUMP`, `PWM` y `GATE` desde el dominio, con las cuatro reglas y sus iconos Ionicons. Verificar: `npx tsc --noEmit` en 0 errores.
 
@@ -142,26 +142,28 @@ Cada paso deja la app funcional y arrancable.
 
 ## Criterios de aceptación
 
-- [ ] `npx tsc --noEmit` termina con 0 errores.
-- [ ] `src/app/(tabs)/settings.tsx` consume `useTelemetry()` y compone las tres tarjetas; no queda el placeholder "En construcción".
-- [ ] Durante la carga inicial se muestra un `ActivityIndicator` en lugar de las tarjetas.
-- [ ] Ante un error de consulta se muestra la tarjeta de aviso y el botón ejecuta `refetch()` (verificado con fallo inyectado temporalmente y luego revertido).
-- [ ] El badge muestra `"En vivo • Simulación"` y los datos se actualizan cada 2 s sin interacción del usuario.
-- [ ] `ThresholdsCard` pinta `targetMoisturePct` y `hysteresisPct` vigentes mientras no haya borradores, y respeta lo tecleado durante el polling de 2 s.
-- [ ] Se rechazan valores vacíos, decimales, signos y fuera de rango: objetivo 10–95 e histéresis 1–`target - 1`, con mensaje inline por campo.
-- [ ] La histéresis nunca puede igualar o superar el objetivo, de modo que el umbral de encendido `target - hysteresis` es siempre `> 0 %` y `< target`.
-- [ ] La vista previa muestra `"La bomba se encenderá debajo de X%"`, con `X = target - hysteresis`, y se recalcula al teclear.
-- [ ] "Guardar umbrales" está deshabilitado con valores inválidos, sin cambios o con `isPending`, y despacha exactamente `{ type: "SET_THRESHOLDS", targetMoisturePct, hysteresisPct }`.
-- [ ] Tras guardar con éxito, los borradores vuelven a `null` y la UI muestra los nuevos valores; si la mutación falla, el aviso es inline y los borradores se conservan (fallo inyectado y revertido).
-- [ ] "Restaurar cultivo base (65% / 10%)" despacha `SET_THRESHOLDS` con `SOIL.DEFAULT_TARGET_PCT` y `SOIL.DEFAULT_HYSTERESIS_PCT`.
-- [ ] `SimulationDebugCard` está etiquetado como panel de pruebas del simulador local y expone exactamente los 5 helpers `setProximityNear`, `setProximityFar`, `forceSoilDry`, `togglePhotoperiod` y `setSensorFault(!dhtOk)`, importados desde `@/services/mock/mock.service`.
-- [ ] Tras cualquiera de las 5 acciones se llama `queryClient.invalidateQueries({ queryKey: ["telemetry"] })` y la UI cambia antes del siguiente tick de 2 s.
-- [ ] El panel muestra la distancia actual (cm) resaltada cuando `< 10 cm`, la humedad actual (%), la fase `DAY`/`NIGHT` y el estado del DHT11, con etiquetas dinámicas "Simular fallo DHT11" / "Restaurar sensor DHT11".
-- [ ] `FirmwareRulesCard` es de solo lectura y muestra 13 h / 11 h, 10 s / 30 s, PWM 230–245 y umbral ultrasónico < 10 cm usando constantes, sin números duplicados a mano.
-- [ ] En web (ancho ≥ 600 px) las tarjetas se disponen en 2 columnas; en móvil (~360 px) se apilan en 1 columna, con `ScrollView` funcional y última tarjeta visible sobre la barra de tabs.
-- [ ] Pruebas cruzadas verificadas en web y en Expo Go 58 (Android): suelo seco → riego/cooldown en Dashboard y Controls; objeto cerca → alerta de proximidad; cambio de fase → ventilador y fotoperiodo; fallo DHT11 → alerta en ClimateCard.
-- [ ] `npm run web` arranca sin errores y Expo Go 58 (Android) muestra la pantalla Settings sin pantalla en blanco ni errores de consola.
-- [ ] No se añaden dependencias en `package.json`, no se usa `AsyncStorage`, no se crea `services/api/` ni código STOMP, y no se modifican los contratos de dominio, el motor, el repositorio ni los hooks de SPEC 01–02.
+- [x] `npx tsc --noEmit` termina con 0 errores.
+- [x] `src/app/(tabs)/settings.tsx` consume `useTelemetry()` y compone las tres tarjetas; no queda el placeholder "En construcción".
+- [x] Durante la carga inicial se muestra un `ActivityIndicator` en lugar de las tarjetas.
+- [x] Ante un error de consulta se muestra la tarjeta de aviso y el botón ejecuta `refetch()` (verificado con fallo inyectado temporalmente y luego revertido).
+- [x] El badge muestra `"En vivo • Simulación"` y los datos se actualizan cada 2 s sin interacción del usuario.
+- [x] `ThresholdsCard` pinta `targetMoisturePct` y `hysteresisPct` vigentes mientras no haya borradores, y respeta lo tecleado durante el polling de 2 s.
+- [x] Se rechazan valores vacíos, decimales, signos y fuera de rango: objetivo 10–95 e histéresis 1–`target - 1`, con mensaje inline por campo.
+- [x] La histéresis nunca puede igualar o superar el objetivo, de modo que el umbral de encendido `target - hysteresis` es siempre `> 0 %` y `< target`.
+- [x] La vista previa muestra `"La bomba se encenderá debajo de X%"`, con `X = target - hysteresis`, y se recalcula al teclear.
+- [x] "Guardar umbrales" está deshabilitado con valores inválidos, sin cambios o con `isPending`, y despacha exactamente `{ type: "SET_THRESHOLDS", targetMoisturePct, hysteresisPct }`.
+- [x] Tras guardar con éxito, los borradores vuelven a `null` y la UI muestra los nuevos valores; si la mutación falla, el aviso es inline y los borradores se conservan (fallo inyectado y revertido).
+- [x] "Restaurar cultivo base (65% / 10%)" despacha `SET_THRESHOLDS` con `SOIL.DEFAULT_TARGET_PCT` y `SOIL.DEFAULT_HYSTERESIS_PCT`.
+- [x] `SimulationDebugCard` está etiquetado como panel de pruebas del simulador local y expone exactamente los 5 helpers `setProximityNear`, `setProximityFar`, `forceSoilDry`, `togglePhotoperiod` y `setSensorFault(dhtOk)`, importados desde `@/services/mock/mock.service`.
+- [x] Tras cualquiera de las 5 acciones se llama `queryClient.invalidateQueries({ queryKey: ["telemetry"] })` y la UI cambia antes del siguiente tick de 2 s.
+- [x] El panel muestra la distancia actual (cm) resaltada cuando `< 10 cm`, la humedad actual (%), la fase `DAY`/`NIGHT` y el estado del DHT11, con etiquetas dinámicas "Simular fallo DHT11" / "Restaurar sensor DHT11".
+- [x] `FirmwareRulesCard` es de solo lectura y muestra 13 h / 11 h, 10 s / 30 s, PWM 230–245 y umbral ultrasónico < 10 cm usando constantes, sin números duplicados a mano.
+- [x] En web (ancho ≥ 600 px) las tarjetas se disponen en 2 columnas; en móvil (~360 px) se apilan en 1 columna, con `ScrollView` funcional y última tarjeta visible sobre la barra de tabs.
+- [x] Pruebas cruzadas verificadas en web y en Expo Go 58 (Android): suelo seco → riego/cooldown en Dashboard y Controls; objeto cerca → alerta de proximidad; cambio de fase → ventilador y fotoperiodo; fallo DHT11 → alerta en ClimateCard.
+- [x] `npm run web` arranca sin errores y Expo Go 58 (Android) muestra la pantalla Settings sin pantalla en blanco ni errores de consola.
+- [x] No se añaden dependencias en `package.json`, no se usa `AsyncStorage`, no se crea `services/api/` ni código STOMP, y no se modifican los contratos de dominio, el motor, el repositorio ni los hooks de SPEC 01–02.
+
+> **Registro de verificación (2026-11-22):** comprobados en este entorno `npx tsc --noEmit` (0 errores), `npm run web -- --port 8082` y la ruta `/settings`, el badge y las tres tarjetas, validación inline y vista previa del formulario, guardado con limpieza de borradores, aviso inline con los borradores conservados ante fallo de mutación inyectado (revertido), tarjeta de error con `Reintentar` ante fallo de query inyectado (revertido), las 5 acciones del panel con invalidación inmediata, las pruebas cruzadas en web (riego, proximidad, fotoperiodo, DHT11) y el layout de 2 columnas a 1000 px / 1 columna a 360 px. La comprobación en Expo Go 58 (Android) fue ejecutada y confirmada por el usuario en dispositivo; no se pudo reproducir en el entorno del agente (sin `adb`), pero con esa confirmación todos los criterios quedan marcados y el estado pasa a `Implementado`.
 
 ## Decisiones tomadas y descartadas
 
@@ -172,6 +174,7 @@ Cada paso deja la app funcional y arrancable.
 - **Sí:** limpiar los borradores solo en `onSuccess`. Si el comando falla, conservar lo tecleado evita perder la edición del usuario.
 - **Sí:** invalidar con la clave literal `["telemetry"]` desde `SimulationDebugCard`, sin exportar `TELEMETRY_KEY` ni modificar `useGreenhouse.ts`. Mantiene el alcance de archivos reducido y cumple lo pedido; el acoplamiento se vigila con el criterio de aceptación de refresco inmediato.
 - **Sí:** importar `mockEngine` desde `@/services/mock/mock.service`, que ya lo reexporta. No se añade un nuevo módulo de debug ni se toca `GreenhouseRepository`: los helpers son solo de la sesión local.
+- **Sí (corrección durante la implementación):** el botón del DHT11 llama a `mockEngine.setSensorFault(dhtOk)`, no a `setSensorFault(!dhtOk)`. `mock.engine.ts` define `setSensorFault(fault) { this.state.dhtOk = !fault; }`, por lo que negar el argumento lo deja intacto (`!(!dhtOk) === dhtOk`) y el botón sería un no-op. Pasar `dhtOk` respeta la semántica del motor y la arquitectura de esta spec (línea 88: `dhtOk === true` → fallo, `dhtOk === false` → restaurar), y se comprobó en navegador que cambia `OK` ↔ `En fallo` y propaga la alerta a `ClimateCard`. Se corrigen aquí el plan y el criterio de aceptación para que no contradigan la arquitectura; el motor no se toca.
 - **Sí:** `FirmwareRulesCard` lee las constantes del dominio en lugar de escribir los números a mano, para que un cambio de firmware se refleje desde un único sitio.
 - **Sí:** etiquetas en español y paleta `AppColors` (clara, indigo/lavanda), coherentes con SPEC 03 y SPEC 04.
 - **Sí:** el panel de simulación avisa de que sus acciones no llegan al invernadero real, para no confundirlo con los comandos `CommandDTO` de `Controls`.
