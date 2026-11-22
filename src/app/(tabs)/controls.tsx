@@ -12,6 +12,7 @@ import { FanControlCard } from "@/components/actuators/FanControlCard";
 import { GateControlCard } from "@/components/actuators/GateControlCard";
 import { LightControlCard } from "@/components/actuators/LightControlCard";
 import { PumpControlCard } from "@/components/actuators/PumpControlCard";
+import { ConnectionBadge } from "@/components/ui/ConnectionBadge";
 import {
   AppColors,
   BottomTabInset,
@@ -19,19 +20,19 @@ import {
   Spacing,
 } from "@/constants/theme";
 import { useTelemetry } from "@/hooks/useGreenhouse";
-
-/** Punto verde del badge: la fuente es el mock, no una conexión real. */
-const LIVE_DOT_COLOR = "#22C55E";
+import { isMock } from "@/services";
+import { getUserFacingMessage } from "@/services/api/api.service";
 
 export default function ControlsScreen() {
   const colors = AppColors;
-  const { data, isLoading, isError, refetch } = useTelemetry();
+  const { data, isLoading, isError, error, refetch } = useTelemetry();
 
   return (
     <View style={[styles.screen, { backgroundColor: colors.background }]}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         <View style={styles.header}>
           <Text style={[styles.title, { color: colors.text }]}>Controls</Text>
+          <ConnectionBadge isMock={isMock} deviceOnline={data?.deviceOnline} />
         </View>
 
         {isLoading ? (
@@ -51,7 +52,7 @@ export default function ControlsScreen() {
               color={colors.text}
             />
             <Text style={[styles.errorText, { color: colors.text }]}>
-              No se pudo cargar la telemetría.
+              {getUserFacingMessage(error)}
             </Text>
             <Pressable
               onPress={() => refetch()}
@@ -66,24 +67,24 @@ export default function ControlsScreen() {
         ) : data ? (
           <View style={styles.grid}>
             <PumpControlCard
-              pumpActive={data.pumpActive}
-              pumpCooldownRemainingSec={data.pumpCooldownRemainingSec}
-              soilMoisturePct={data.soilMoisturePct}
-              targetMoisturePct={data.targetMoisturePct}
+              pumpActive={data.telemetry.pumpActive}
+              pumpCooldownRemainingSec={data.telemetry.pumpCooldownRemainingSec}
+              soilMoisturePct={data.telemetry.soilMoisturePct}
+              targetMoisturePct={data.telemetry.targetMoisturePct}
             />
             <FanControlCard
-              fanActive={data.fanActive}
-              fanPwm={data.fanPwm}
-              photoperiodState={data.photoperiodState}
+              fanActive={data.telemetry.fanActive}
+              fanPwm={data.telemetry.fanPwm}
+              photoperiodState={data.telemetry.photoperiodState}
             />
             <LightControlCard
-              lightPwm={data.lightPwm}
-              photoperiodState={data.photoperiodState}
+              lightPwm={data.telemetry.lightPwm}
+              photoperiodState={data.telemetry.photoperiodState}
             />
             <GateControlCard
-              gateMode={data.gateMode}
-              gateOpen={data.gateOpen}
-              proximityDistanceCm={data.proximityDistanceCm}
+              gateMode={data.telemetry.gateMode}
+              gateOpen={data.telemetry.gateOpen}
+              proximityDistanceCm={data.telemetry.proximityDistanceCm}
             />
           </View>
         ) : null}
@@ -114,24 +115,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: "700",
-  },
-  badge: {
-    alignSelf: "flex-start",
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.two,
-    paddingHorizontal: Spacing.two,
-    paddingVertical: Spacing.one,
-    borderRadius: 999,
-  },
-  liveDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  badgeText: {
-    fontSize: 12,
-    fontWeight: "600",
   },
   stateContainer: {
     alignItems: "center",

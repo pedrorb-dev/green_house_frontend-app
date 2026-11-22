@@ -1,9 +1,9 @@
 import type {
   CommandDTO,
-  TelemetryDTO,
+  TelemetryResponse,
 } from "@/domain/models/greenhouse.types";
 
 export interface GreenhouseRepository {
-  getTelemetry(): Promise<TelemetryDTO>;
-  sendCommand(command: CommandDTO): Promise<void>;
+  getTelemetry(): Promise<TelemetryResponse>;
+  sendCommand(command: CommandDTO): Promise<CommandDTO>;
 }

@@ -13,6 +13,7 @@ import { SensorCard } from "@/components/sensors/SensorCard";
 import { AppColors, Spacing } from "@/constants/theme";
 import { PWM, type PhotoperiodState } from "@/domain/models/greenhouse.types";
 import { useSendCommand } from "@/hooks/useGreenhouse";
+import { getUserFacingMessage } from "@/services/api/api.service";
 
 const FAN_PRESETS = [230, 238, 245] as const;
 const FAN_STEP = 1;
@@ -33,7 +34,7 @@ export function FanControlCard({
   photoperiodState,
 }: FanControlCardProps) {
   const colors = AppColors;
-  const { mutate, isPending, isError } = useSendCommand();
+  const { mutate, isPending, isError, error } = useSendCommand();
   const [draft, setDraft] = useState<number | null>(null);
 
   const value = draft ?? fanPwm;
@@ -106,7 +107,7 @@ export function FanControlCard({
         >
           <Ionicons name="alert-circle-outline" size={16} color={colors.text} />
           <Text style={[styles.alertText, { color: colors.text }]}>
-            No se pudo aplicar el PWM. El valor pendiente se conserva.
+            {getUserFacingMessage(error)}
           </Text>
         </View>
       )}

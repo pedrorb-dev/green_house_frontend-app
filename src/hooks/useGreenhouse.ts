@@ -1,23 +1,24 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { UseMutationResult, UseQueryResult } from "@tanstack/react-query";
-import { greenhouseRepository } from "@/services/mock/mock.service";
 import type {
   CommandDTO,
-  TelemetryDTO,
+  TelemetryResponse,
 } from "@/domain/models/greenhouse.types";
+import { greenhouseRepository } from "@/services";
 
 const TELEMETRY_KEY = ["telemetry"] as const;
 
-export function useTelemetry(): UseQueryResult<TelemetryDTO, Error> {
+export function useTelemetry(): UseQueryResult<TelemetryResponse, Error> {
   return useQuery({
     queryKey: TELEMETRY_KEY,
     queryFn: () => greenhouseRepository.getTelemetry(),
     refetchInterval: 2000,
+    retry: false,
   });
 }
 
 export function useSendCommand(): UseMutationResult<
-  void,
+  CommandDTO,
   Error,
   CommandDTO,
   unknown

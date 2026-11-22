@@ -9,6 +9,7 @@ import {
   type GateMode,
 } from "@/domain/models/greenhouse.types";
 import { useSendCommand } from "@/hooks/useGreenhouse";
+import { getUserFacingMessage } from "@/services/api/api.service";
 
 const GATE_MODES: readonly GateMode[] = ["AUTO", "OPEN", "CLOSED"];
 
@@ -24,7 +25,7 @@ export function GateControlCard({
   proximityDistanceCm,
 }: GateControlCardProps) {
   const colors = AppColors;
-  const { mutate, isPending, isError } = useSendCommand();
+  const { mutate, isPending, isError, error } = useSendCommand();
 
   const proximityDetected =
     gateMode === "AUTO" && proximityDistanceCm < GATE.PROXIMITY_THRESHOLD_CM;
@@ -118,7 +119,7 @@ export function GateControlCard({
         >
           <Ionicons name="alert-circle-outline" size={16} color={colors.text} />
           <Text style={[styles.alertText, { color: colors.text }]}>
-            No se pudo cambiar el modo de la compuerta.
+            {getUserFacingMessage(error)}
           </Text>
         </View>
       )}

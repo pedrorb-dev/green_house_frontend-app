@@ -38,6 +38,38 @@ export type CommandDTO =
       hysteresisPct: number;
     };
 
+// Respuesta del backend (o del mock) con el estado de conexión del ESP32
+export interface TelemetryResponse {
+  telemetry: TelemetryDTO;
+  deviceOnline: boolean; // de la cabecera X-Device-Online
+}
+
+// Contratos del backend aún sin UI (SPEC 06)
+export type HistoryRange = "1h" | "6h" | "24h" | "7d";
+
+export interface TelemetryHistoryPoint {
+  timestamp: string; // ISO-8601 (Instant)
+  temperatureC: number | null;
+  humidityPct: number | null;
+  soilMoisturePct: number | null;
+  lightPwm: number | null;
+  fanPwm: number | null;
+}
+
+export interface HealthResponse {
+  status: string;
+  service: string;
+  timestamp: string;
+  deviceOnline: boolean;
+  lastTelemetryAt: string | null;
+}
+
+export interface ErrorResponse {
+  error: string; // código estable del backend
+  message: string; // descripción técnica
+  timestamp: string;
+}
+
 export const PWM = {
   FAN_MIN: 230,
   FAN_MAX: 245,

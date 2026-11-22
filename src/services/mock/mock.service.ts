@@ -1,7 +1,7 @@
 import type { GreenhouseRepository } from "@/domain/repositories/greenhouse.repo";
 import type {
   CommandDTO,
-  TelemetryDTO,
+  TelemetryResponse,
 } from "@/domain/models/greenhouse.types";
 import { MockEngine } from "@/services/mock/mock.engine";
 
@@ -11,20 +11,24 @@ const delay = (ms: number) =>
 class MockGreenhouseService implements GreenhouseRepository {
   constructor(private readonly engine: MockEngine) {}
 
-  async getTelemetry(): Promise<TelemetryDTO> {
+  async getTelemetry(): Promise<TelemetryResponse> {
     await delay(50 + Math.random() * 50);
-    return this.engine.getSnapshot();
+    return { telemetry: this.engine.getSnapshot(), deviceOnline: true };
   }
 
-  async sendCommand(command: CommandDTO): Promise<void> {
+  async sendCommand(command: CommandDTO): Promise<CommandDTO> {
     await delay(50 + Math.random() * 50);
     this.engine.apply(command);
+    return command;
   }
 }
 
 const engine = new MockEngine();
-engine.start();
 
-export const greenhouseRepository: GreenhouseRepository =
-  new MockGreenhouseService(engine);
+/** Arranca el motor de forma perezosa: en modo API no se crea ningún intervalo. */
+export function createMockGreenhouseRepository(): GreenhouseRepository {
+  engine.start();
+  return new MockGreenhouseService(engine);
+}
+
 export { engine as mockEngine };

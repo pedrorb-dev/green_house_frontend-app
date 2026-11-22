@@ -14,6 +14,7 @@ import { SensorCard } from "@/components/sensors/SensorCard";
 import { AppColors, Spacing } from "@/constants/theme";
 import { SOIL } from "@/domain/models/greenhouse.types";
 import { useSendCommand } from "@/hooks/useGreenhouse";
+import { getUserFacingMessage } from "@/services/api/api.service";
 
 const INTEGER_PATTERN = /^\d+$/;
 const TARGET_MIN = 10;
@@ -30,7 +31,7 @@ export function ThresholdsCard({
   hysteresisPct,
 }: ThresholdsCardProps) {
   const colors = AppColors;
-  const { mutate, isPending, isError } = useSendCommand();
+  const { mutate, isPending, isError, error } = useSendCommand();
   const [draftTarget, setDraftTarget] = useState<string | null>(null);
   const [draftHysteresis, setDraftHysteresis] = useState<string | null>(null);
 
@@ -181,8 +182,7 @@ export function ThresholdsCard({
         >
           <Ionicons name="alert-circle-outline" size={16} color={colors.text} />
           <Text style={[styles.alertText, { color: colors.text }]}>
-            No se pudieron guardar los umbrales. Revisa los valores y vuelve a
-            intentar.
+            {getUserFacingMessage(error)}
           </Text>
         </View>
       )}

@@ -11,6 +11,7 @@ import { roundPercent } from "@/components/sensors/format";
 import { SensorCard } from "@/components/sensors/SensorCard";
 import { AppColors, Spacing } from "@/constants/theme";
 import { useSendCommand } from "@/hooks/useGreenhouse";
+import { getUserFacingMessage } from "@/services/api/api.service";
 
 interface PumpControlCardProps {
   pumpActive: boolean;
@@ -26,7 +27,7 @@ export function PumpControlCard({
   targetMoisturePct,
 }: PumpControlCardProps) {
   const colors = AppColors;
-  const { mutate, isPending, isError } = useSendCommand();
+  const { mutate, isPending, isError, error } = useSendCommand();
 
   const status = pumpActive
     ? "Regando…"
@@ -70,7 +71,7 @@ export function PumpControlCard({
         >
           <Ionicons name="alert-circle-outline" size={16} color={colors.text} />
           <Text style={[styles.alertText, { color: colors.text }]}>
-            No se pudo enviar el riego. Inténtalo de nuevo.
+            {getUserFacingMessage(error)}
           </Text>
         </View>
       )}

@@ -12,6 +12,7 @@ import { AccessGateCard } from "@/components/sensors/AccessGateCard";
 import { ClimateCard } from "@/components/sensors/ClimateCard";
 import { PhotoperiodCard } from "@/components/sensors/PhotoperiodCard";
 import { SoilMoistureCard } from "@/components/sensors/SoilMoistureCard";
+import { ConnectionBadge } from "@/components/ui/ConnectionBadge";
 import {
   AppColors,
   BottomTabInset,
@@ -19,19 +20,19 @@ import {
   Spacing,
 } from "@/constants/theme";
 import { useTelemetry } from "@/hooks/useGreenhouse";
-
-/** Punto verde del badge: la fuente es el mock, no una conexión real. */
-const LIVE_DOT_COLOR = "#22C55E";
+import { isMock } from "@/services";
+import { getUserFacingMessage } from "@/services/api/api.service";
 
 export default function DashboardScreen() {
   const colors = AppColors;
-  const { data, isLoading, isError, refetch } = useTelemetry();
+  const { data, isLoading, isError, error, refetch } = useTelemetry();
 
   return (
     <View style={[styles.screen, { backgroundColor: colors.background }]}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         <View style={styles.header}>
           <Text style={[styles.title, { color: colors.text }]}>Dashboard</Text>
+          <ConnectionBadge isMock={isMock} deviceOnline={data?.deviceOnline} />
         </View>
 
         {isLoading ? (
@@ -50,6 +51,9 @@ export default function DashboardScreen() {
               size={28}
               color={colors.text}
             />
+            <Text style={[styles.errorText, { color: colors.text }]}>
+              {getUserFacingMessage(error)}
+            </Text>
 
             <Pressable
               onPress={() => refetch()}
@@ -64,29 +68,29 @@ export default function DashboardScreen() {
           <>
             <View style={styles.grid}>
               <ClimateCard
-                temperatureC={data.temperatureC}
-                humidityPct={data.humidityPct}
-                dhtOk={data.dhtOk}
+                temperatureC={data.telemetry.temperatureC}
+                humidityPct={data.telemetry.humidityPct}
+                dhtOk={data.telemetry.dhtOk}
               />
               <SoilMoistureCard
-                soilMoisturePct={data.soilMoisturePct}
-                soilRaw={data.soilRaw}
-                targetMoisturePct={data.targetMoisturePct}
-                hysteresisPct={data.hysteresisPct}
-                pumpActive={data.pumpActive}
-                pumpCooldownRemainingSec={data.pumpCooldownRemainingSec}
+                soilMoisturePct={data.telemetry.soilMoisturePct}
+                soilRaw={data.telemetry.soilRaw}
+                targetMoisturePct={data.telemetry.targetMoisturePct}
+                hysteresisPct={data.telemetry.hysteresisPct}
+                pumpActive={data.telemetry.pumpActive}
+                pumpCooldownRemainingSec={data.telemetry.pumpCooldownRemainingSec}
               />
               <PhotoperiodCard
-                photoperiodState={data.photoperiodState}
-                secondsToPhotoperiodChange={data.secondsToPhotoperiodChange}
-                lightPwm={data.lightPwm}
-                fanActive={data.fanActive}
-                fanPwm={data.fanPwm}
+                photoperiodState={data.telemetry.photoperiodState}
+                secondsToPhotoperiodChange={data.telemetry.secondsToPhotoperiodChange}
+                lightPwm={data.telemetry.lightPwm}
+                fanActive={data.telemetry.fanActive}
+                fanPwm={data.telemetry.fanPwm}
               />
               <AccessGateCard
-                proximityDistanceCm={data.proximityDistanceCm}
-                gateOpen={data.gateOpen}
-                gateMode={data.gateMode}
+                proximityDistanceCm={data.telemetry.proximityDistanceCm}
+                gateOpen={data.telemetry.gateOpen}
+                gateMode={data.telemetry.gateMode}
               />
             </View>
           </>
@@ -118,24 +122,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: "700",
-  },
-  badge: {
-    alignSelf: "flex-start",
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.two,
-    paddingHorizontal: Spacing.two,
-    paddingVertical: Spacing.one,
-    borderRadius: 999,
-  },
-  liveDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  badgeText: {
-    fontSize: 12,
-    fontWeight: "600",
   },
   stateContainer: {
     alignItems: "center",

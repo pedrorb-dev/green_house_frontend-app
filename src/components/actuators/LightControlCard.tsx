@@ -13,6 +13,7 @@ import { SensorCard } from "@/components/sensors/SensorCard";
 import { AppColors, Spacing } from "@/constants/theme";
 import { PWM, type PhotoperiodState } from "@/domain/models/greenhouse.types";
 import { useSendCommand } from "@/hooks/useGreenhouse";
+import { getUserFacingMessage } from "@/services/api/api.service";
 
 const FOCO_PASO = 16;
 const LIGHT_PRESETS = [
@@ -36,7 +37,7 @@ export function LightControlCard({
   photoperiodState,
 }: LightControlCardProps) {
   const colors = AppColors;
-  const { mutate, isPending, isError } = useSendCommand();
+  const { mutate, isPending, isError, error } = useSendCommand();
   const [draft, setDraft] = useState<number | null>(null);
 
   const value = draft ?? lightPwm;
@@ -93,7 +94,7 @@ export function LightControlCard({
         >
           <Ionicons name="alert-circle-outline" size={16} color={colors.text} />
           <Text style={[styles.alertText, { color: colors.text }]}>
-            No se pudo aplicar la intensidad. El valor pendiente se conserva.
+            {getUserFacingMessage(error)}
           </Text>
         </View>
       )}

@@ -11,6 +11,7 @@ import {
 import { FirmwareRulesCard } from "@/components/settings/FirmwareRulesCard";
 import { SimulationDebugCard } from "@/components/settings/SimulationDebugCard";
 import { ThresholdsCard } from "@/components/settings/ThresholdsCard";
+import { ConnectionBadge } from "@/components/ui/ConnectionBadge";
 import {
   AppColors,
   BottomTabInset,
@@ -18,25 +19,19 @@ import {
   Spacing,
 } from "@/constants/theme";
 import { useTelemetry } from "@/hooks/useGreenhouse";
-
-/** Punto verde del badge: la fuente es el mock, no una conexión real. */
-const LIVE_DOT_COLOR = "#22C55E";
+import { isMock } from "@/services";
+import { getUserFacingMessage } from "@/services/api/api.service";
 
 export default function SettingsScreen() {
   const colors = AppColors;
-  const { data, isLoading, isError, refetch } = useTelemetry();
+  const { data, isLoading, isError, error, refetch } = useTelemetry();
 
   return (
     <View style={[styles.screen, { backgroundColor: colors.background }]}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         <View style={styles.header}>
           <Text style={[styles.title, { color: colors.text }]}>Settings</Text>
-          <View style={styles.badge}>
-            <View style={[styles.liveDot, { backgroundColor: LIVE_DOT_COLOR }]} />
-            <Text style={[styles.badgeText, { color: colors.textSecondary }]}>
-              En vivo • Simulación
-            </Text>
-          </View>
+          <ConnectionBadge isMock={isMock} deviceOnline={data?.deviceOnline} />
         </View>
 
         {isLoading ? (
@@ -59,7 +54,7 @@ export default function SettingsScreen() {
               color={colors.text}
             />
             <Text style={[styles.errorText, { color: colors.text }]}>
-              No se pudo cargar la telemetría.
+              {getUserFacingMessage(error)}
             </Text>
             <Pressable
               onPress={() => refetch()}
@@ -74,15 +69,17 @@ export default function SettingsScreen() {
         ) : data ? (
           <View style={styles.grid}>
             <ThresholdsCard
-              targetMoisturePct={data.targetMoisturePct}
-              hysteresisPct={data.hysteresisPct}
+              targetMoisturePct={data.telemetry.targetMoisturePct}
+              hysteresisPct={data.telemetry.hysteresisPct}
             />
-            <SimulationDebugCard
-              dhtOk={data.dhtOk}
-              photoperiodState={data.photoperiodState}
-              proximityDistanceCm={data.proximityDistanceCm}
-              soilMoisturePct={data.soilMoisturePct}
-            />
+            {isMock ? (
+              <SimulationDebugCard
+                dhtOk={data.telemetry.dhtOk}
+                photoperiodState={data.telemetry.photoperiodState}
+                proximityDistanceCm={data.telemetry.proximityDistanceCm}
+                soilMoisturePct={data.telemetry.soilMoisturePct}
+              />
+            ) : null}
             <FirmwareRulesCard />
           </View>
         ) : null}
@@ -113,24 +110,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: "700",
-  },
-  badge: {
-    alignSelf: "flex-start",
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.two,
-    paddingHorizontal: Spacing.two,
-    paddingVertical: Spacing.one,
-    borderRadius: 999,
-  },
-  liveDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  badgeText: {
-    fontSize: 12,
-    fontWeight: "600",
   },
   stateContainer: {
     alignItems: "center",
